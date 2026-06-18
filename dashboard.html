@@ -50,7 +50,8 @@ nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px}
 .search-input{padding:5px 11px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:'Inter',sans-serif;font-size:12px;width:180px;outline:none}
 .search-input:focus{border-color:var(--accent)}
 table{width:100%;border-collapse:collapse}
-thead th{padding:9px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap}
+thead th{padding:9px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:#4a6080;background:#dce8f5;border-bottom:1px solid #b0c4d8;white-space:nowrap}
+thead th.th-amt{text-align:right}
 tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
 tbody tr:last-child{border-bottom:none}
 tbody tr:hover{background:#f8fafc}
@@ -200,7 +201,7 @@ tbody td.center{text-align:center}
       <span class="table-title">⚠️ Invoices Requiring Action</span>
       <span id="monthly-count" style="font-size:11px;color:var(--muted);margin-left:8px"></span>
     </div>
-    <table><thead><tr><th>Supplier</th><th>Invoice</th><th>Due Date</th><th>Inv Amount</th><th>Paid</th><th>Pending</th><th>Status</th><th>Priority</th><th>PMT Date</th></tr><tr id="monthlyTotalRow" style="background:linear-gradient(90deg,#f0f4fa,#e8f0fb);font-weight:700;border-bottom:2px solid #b0c4d8;border-top:1px solid #b0c4d8"></tr></thead>
+    <table><thead><tr><th>#</th><th>Supplier</th><th>Invoice</th><th>Due Date</th><th class="th-amt">Inv Amount</th><th class="th-amt">Paid</th><th class="th-amt">Pending</th><th>Status</th><th>Priority</th><th>PMT Date</th><th>Notes</th></tr><tr id="monthlyTotalRow" style="background:linear-gradient(90deg,#f0f4fa,#e8f0fb);font-weight:700;border-bottom:2px solid #b0c4d8;border-top:1px solid #b0c4d8"></tr></thead>
     <tbody id="monthlyTableBody"></tbody></table>
 <div class="page" id="page-supplier-info">
   <div class="page-header">
@@ -694,15 +695,15 @@ function applyMonthlyFilter(){
       '<div style="margin-top:10px;display:flex;flex-direction:column;gap:5px">'+
         '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px">'+
           '<span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#c0392b;display:inline-block"></span><span style="color:var(--muted)">Urgent</span></span>'+
-          '<span style="font-weight:700;color:#c0392b">'+fmtK(urgent)+'</span>'+
+          '<span style="font-weight:700;color:#c0392b">'+fmtK(urgent)+(total>0?' <span style="font-weight:400;color:var(--muted);font-size:10px">(~'+(urgent/total*100).toFixed(0)+'%)</span>':'')+'</span>'+
         '</div>'+
         '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px">'+
           '<span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#e67e22;display:inline-block"></span><span style="color:var(--muted)">Planned</span></span>'+
-          '<span style="font-weight:700;color:#e67e22">'+fmtK(planned)+'</span>'+
+          '<span style="font-weight:700;color:#e67e22">'+fmtK(planned)+(total>0?' <span style="font-weight:400;color:var(--muted);font-size:10px">(~'+(planned/total*100).toFixed(0)+'%)</span>':'')+'</span>'+
         '</div>'+
         '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px">'+
           '<span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#27ae60;display:inline-block"></span><span style="color:var(--muted)">Consider</span></span>'+
-          '<span style="font-weight:700;color:#27ae60">'+fmtK(consider)+'</span>'+
+          '<span style="font-weight:700;color:#27ae60">'+fmtK(consider)+(total>0?' <span style="font-weight:400;color:var(--muted);font-size:10px">(~'+(consider/total*100).toFixed(0)+'%)</span>':'')+'</span>'+
         '</div>'+
       '</div>'+
     '</div>';
@@ -714,9 +715,10 @@ function applyMonthlyFilter(){
     if(pa!==pb) return pa-pb;
     return (parseDateMs(a.dueDate)||9999999999999)-(parseDateMs(b.dueDate)||9999999999999);
   });
-  document.getElementById('monthlyTableBody').innerHTML=data.map(function(d){
+  document.getElementById('monthlyTableBody').innerHTML=data.map(function(d,i){
     var amtC=d.status==='Overdue'?'#1a3a5c':d.status==='Due Soon'?'#2e8bc0':'var(--text)';
     return '<tr>'+
+      '<td style="color:var(--muted);font-size:11px;text-align:right;width:32px">'+(i+1)+'</td>'+
       '<td class="tbl-supplier">'+d.supplier+'</td>'+
       '<td class="tbl-inv">'+d.inv+'</td>'+
       '<td class="tbl-date">'+d.dueDate+'</td>'+
@@ -726,19 +728,20 @@ function applyMonthlyFilter(){
       '<td class="center">'+badge(d.status)+'</td>'+
       '<td style="white-space:nowrap">'+d.priority+'</td>'+
       '<td class="tbl-date center">'+(d.pmtDate||'—')+'</td>'+
+      '<td class="tbl-note" style="max-width:200px;white-space:normal;font-size:12px;color:var(--muted)">'+(d.note||'—')+'</td>'+
       '</tr>';
-  }).join('')||'<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--muted)">No invoices found ✅</td></tr>';
+  }).join('')||'<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--muted)">No invoices found ✅</td></tr>';
   // Total row
   var tAmount=data.reduce(function(a,d){return a+d.amount;},0);
   var tPaid=data.reduce(function(a,d){return a+d.paid;},0);
   var tPending=data.reduce(function(a,d){return a+d.pending;},0);
   var tr=document.getElementById('monthlyTotalRow');
   if(tr) tr.innerHTML=
-    '<td colspan="3" style="padding:8px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)">Total ('+data.length+' invoices)</td>'+
+    '<td colspan="4" style="padding:8px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)">Total ('+data.length+' invoices)</td>'+
     '<td class="amt" style="font-size:13px;font-weight:800;text-align:right;padding-right:14px">'+fmt(tAmount)+'</td>'+
     '<td class="amt" style="color:#8b2500;font-size:13px;font-weight:800;text-align:right;padding-right:14px">-'+fmt(tPaid)+'</td>'+
     '<td class="amt" style="color:#1a5fa8;font-size:13px;font-weight:800;text-align:right;padding-right:14px">'+fmt(tPending)+'</td>'+
-    '<td colspan="3"></td>';
+    '<td colspan="4"></td>';
 }
 
 // ===== SUPPLIER INFO =====
