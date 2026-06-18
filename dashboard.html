@@ -194,7 +194,7 @@ tbody td.center{text-align:center}
     <input class="search-input" placeholder="🔍 Search..." oninput="applyMonthlyFilter()" id="mp-search" style="width:150px">
     <button class="filter-refresh-btn" onclick="loadData()">&#8634; Refresh data</button>
   </div>
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px" id="monthlyKpiRow"></div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px" id="monthlyKpiRow"></div>
   <div class="table-card">
     <div class="table-header">
       <span class="table-title">⚠️ Invoices Requiring Action</span>
@@ -672,17 +672,40 @@ function applyMonthlyFilter(){
   var urgent=data.filter(function(d){return d.priority.indexOf('Urgent')>=0;}).reduce(function(a,d){return a+d.pending;},0);
   var planned=data.filter(function(d){return d.priority.indexOf('Planned')>=0;}).reduce(function(a,d){return a+d.pending;},0);
   var consider=data.filter(function(d){return d.priority.indexOf('Consider')>=0;}).reduce(function(a,d){return a+d.pending;},0);
-  document.getElementById('monthlyKpiRow').innerHTML=[
-    {label:'Total Required',val:fmtK(total),color:'#1a5fa8',sub:data.length+' invoices'},
-    {label:'🔴 Urgent',val:fmtK(urgent),color:'#1a3a5c',sub:total>0?'~'+(urgent/total*100).toFixed(1)+'% of total':'—'},
-    {label:'🟠 Planned',val:fmtK(planned),color:'#2e8bc0',sub:total>0?'~'+(planned/total*100).toFixed(1)+'% of total':'—'},
-    {label:'🟢 Consider',val:fmtK(consider),color:'#4a9bb5',sub:total>0?'~'+(consider/total*100).toFixed(1)+'% of total':'—'},
-  ].map(function(k){
-    return '<div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid '+k.color+';border-radius:10px;padding:16px 18px">'+
-      '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);margin-bottom:6px">'+k.label+'</div>'+
-      '<div style="font-size:22px;font-weight:700;color:'+k.color+';letter-spacing:-.5px">'+k.val+'</div>'+
-      '<div style="font-size:11px;color:var(--muted);margin-top:4px">'+k.sub+'</div></div>';
-  }).join('');
+  var tInvoice=data.reduce(function(a,d){return a+d.amount;},0);
+  var tPaidKpi=data.reduce(function(a,d){return a+d.paid;},0);
+  document.getElementById('monthlyKpiRow').innerHTML=
+    // Card 1: Total Invoice Amount
+    '<div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid #1a5fa8;border-radius:10px;padding:18px 20px">'+
+      '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);margin-bottom:6px">📄 Total Invoice Amount</div>'+
+      '<div style="font-size:26px;font-weight:800;color:#1a5fa8;letter-spacing:-.5px">'+fmtK(tInvoice)+'</div>'+
+      '<div style="font-size:11px;color:var(--muted);margin-top:4px">'+data.length+' invoices</div>'+
+    '</div>'+
+    // Card 2: Total Paid
+    '<div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid #8b2500;border-radius:10px;padding:18px 20px">'+
+      '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);margin-bottom:6px">✅ Total Paid</div>'+
+      '<div style="font-size:26px;font-weight:800;color:#8b2500;letter-spacing:-.5px">'+fmtK(tPaidKpi)+'</div>'+
+      '<div style="font-size:11px;color:var(--muted);margin-top:4px">'+(tInvoice>0?'~'+(tPaidKpi/tInvoice*100).toFixed(1)+'% of total invoiced':'—')+'</div>'+
+    '</div>'+
+    // Card 3: Total Pending (with breakdown)
+    '<div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid #1a3a5c;border-radius:10px;padding:18px 20px">'+
+      '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);margin-bottom:6px">⏳ Total Pending</div>'+
+      '<div style="font-size:26px;font-weight:800;color:#1a3a5c;letter-spacing:-.5px">'+fmtK(total)+'</div>'+
+      '<div style="margin-top:10px;display:flex;flex-direction:column;gap:5px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px">'+
+          '<span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#c0392b;display:inline-block"></span><span style="color:var(--muted)">Urgent</span></span>'+
+          '<span style="font-weight:700;color:#c0392b">'+fmtK(urgent)+'</span>'+
+        '</div>'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px">'+
+          '<span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#e67e22;display:inline-block"></span><span style="color:var(--muted)">Planned</span></span>'+
+          '<span style="font-weight:700;color:#e67e22">'+fmtK(planned)+'</span>'+
+        '</div>'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px">'+
+          '<span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#27ae60;display:inline-block"></span><span style="color:var(--muted)">Consider</span></span>'+
+          '<span style="font-weight:700;color:#27ae60">'+fmtK(consider)+'</span>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
   document.getElementById('monthly-count').textContent=data.length+' items';
   document.getElementById('monthly-subtitle').textContent=data.length+' invoices requiring payment';
   data.sort(function(a,b){
