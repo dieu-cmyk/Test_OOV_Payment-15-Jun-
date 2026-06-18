@@ -200,7 +200,7 @@ tbody td.center{text-align:center}
       <span class="table-title">⚠️ Invoices Requiring Action</span>
       <span id="monthly-count" style="font-size:11px;color:var(--muted);margin-left:8px"></span>
     </div>
-    <table><thead><tr><th>Supplier</th><th>Invoice</th><th>Due Date</th><th>Inv Amount</th><th>Paid</th><th>Pending</th><th>Status</th><th>Priority</th><th>PMT Date</th></tr><tr id="monthlyTotalRow" style="background:var(--surface2);font-weight:700;border-bottom:2px solid var(--border)"></tr></thead>
+    <table><thead><tr><th>Supplier</th><th>Invoice</th><th>Due Date</th><th>Inv Amount</th><th>Paid</th><th>Pending</th><th>Status</th><th>Priority</th><th>PMT Date</th></tr><tr id="monthlyTotalRow" style="background:linear-gradient(90deg,#f0f4fa,#e8f0fb);font-weight:700;border-bottom:2px solid #b0c4d8;border-top:1px solid #b0c4d8"></tr></thead>
     <tbody id="monthlyTableBody"></tbody></table>
 <div class="page" id="page-supplier-info">
   <div class="page-header">
@@ -712,9 +712,9 @@ function applyMonthlyFilter(){
   var tr=document.getElementById('monthlyTotalRow');
   if(tr) tr.innerHTML=
     '<td colspan="3" style="padding:8px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)">Total ('+data.length+' invoices)</td>'+
-    '<td class="amt" style="font-size:13px;font-weight:800">'+fmt(tAmount)+'</td>'+
-    '<td class="amt" style="color:#8b2500;font-size:13px;font-weight:800">-'+fmt(tPaid)+'</td>'+
-    '<td class="amt" style="color:#1a5fa8;font-size:13px;font-weight:800">'+fmt(tPending)+'</td>'+
+    '<td class="amt" style="font-size:13px;font-weight:800;text-align:right;padding-right:14px">'+fmt(tAmount)+'</td>'+
+    '<td class="amt" style="color:#8b2500;font-size:13px;font-weight:800;text-align:right;padding-right:14px">-'+fmt(tPaid)+'</td>'+
+    '<td class="amt" style="color:#1a5fa8;font-size:13px;font-weight:800;text-align:right;padding-right:14px">'+fmt(tPending)+'</td>'+
     '<td colspan="3"></td>';
 }
 
