@@ -215,6 +215,7 @@ tbody td.center{text-align:center}
     <select class="filter-select" id="supplierDropdown" onchange="filterSupplierInfo(this.value)" style="min-width:220px">
       <option value="">All Suppliers</option>
     </select>
+    <input class="search-input" placeholder="🔍 Search supplier..." oninput="searchSupplierInfo(this.value)" style="width:200px">
     <button class="filter-refresh-btn" onclick="loadData()">&#8634; Refresh data</button>
   </div>
   <div class="table-card">
@@ -747,6 +748,12 @@ function filterSupplierInfo(val){
   if(window._supRenderRows&&window._supList){
     window._supRenderRows(val?window._supList.filter(function(s){return s===val;}):window._supList);
   }
+}
+function searchSupplierInfo(q){
+  q=q.toLowerCase();
+  document.querySelectorAll('#supplierInfoBody tr').forEach(function(row){
+    row.style.display=row.textContent.toLowerCase().indexOf(q)>=0?'':'none';
+  });
 }
 
 // ===== AGING =====
