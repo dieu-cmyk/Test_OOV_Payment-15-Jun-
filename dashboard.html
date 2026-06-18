@@ -219,7 +219,7 @@ tbody td.center{text-align:center}
   </div>
   <div class="table-card">
     <div class="table-header"><span class="table-title">Supplier Bank Details</span></div>
-    <table><thead><tr><th>#</th><th>Supplier</th><th>Bank Name</th><th>Bank Account</th><th>Swift Code</th><th>Total Invoiced</th><th>Total Paid</th><th>Outstanding</th><th>Status</th></tr></thead>
+    <table><thead><tr><th>#</th><th>Supplier</th><th>Bank Name</th><th>Bank Account</th><th>Swift Code</th></tr></thead>
     <tbody id="supplierInfoBody"></tbody></table>
   </div>
 </div>
@@ -732,10 +732,6 @@ function renderSupplierInfo(){
         '<td style="font-size:12px;white-space:nowrap">'+s.bank+'</td>'+
         '<td class="tbl-inv">'+s.bankAcc+'</td>'+
         '<td style="font-size:12px;letter-spacing:.5px;white-space:nowrap;color:var(--muted)">'+s.swift+'</td>'+
-        '<td class="amt">'+fmt(s.total)+'</td>'+
-        '<td class="amt" style="color:var(--paid-clr)">'+fmt(s.paid)+'</td>'+
-        '<td class="amt" style="color:'+(s.pending>0?'var(--warn)':'var(--muted)')+'">'+fmt(s.pending)+'</td>'+
-        '<td class="center">'+badge(ms)+'</td>'+
         '</tr>';
     }).join('');
   }
