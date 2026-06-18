@@ -202,13 +202,9 @@ tbody td.center{text-align:center}
       </select>
       <input class="search-input" placeholder="🔍 Search..." oninput="applyMonthlyFilter()" id="mp-search" style="width:180px">
     </div>
-    <table><thead><tr><th>Supplier</th><th>Invoice</th><th>Due Date</th><th>Amount</th><th>Status</th><th>Priority</th><th>Aging</th><th>Notes</th></tr></thead>
+    <table><thead><tr><th>Supplier</th><th>Invoice</th><th>Due Date</th><th>Inv Amount</th><th>Paid</th><th>Pending</th><th>Status</th><th>Priority</th><th>PMT Date</th></tr></thead>
     <tbody id="monthlyTableBody"></tbody>
     <tfoot><tr id="monthlyTotalRow" style="background:var(--surface2);font-weight:700;border-top:2px solid var(--border)"></tr></tfoot></table>
-  </div>
-</div>
-
-<!-- SUPPLIER INFO -->
 <div class="page" id="page-supplier-info">
   <div class="page-header">
     <div>
@@ -700,25 +696,30 @@ function applyMonthlyFilter(){
     return (parseDateMs(a.dueDate)||9999999999999)-(parseDateMs(b.dueDate)||9999999999999);
   });
   document.getElementById('monthlyTableBody').innerHTML=data.map(function(d){
-    var dueMs=parseDateMs(d.dueDate);var aging='—';
-    if(dueMs){var diff=Math.round((new Date().getTime()-dueMs)/86400000);aging=diff>0?'<span style="color:#1a3a5c;font-weight:600">+'+diff+'d overdue</span>':'<span style="color:#4a9bb5">'+Math.abs(diff)+'d left</span>';}
     var amtC=d.status==='Overdue'?'#1a3a5c':d.status==='Due Soon'?'#2e8bc0':'var(--text)';
     return '<tr>'+
       '<td class="tbl-supplier">'+d.supplier+'</td>'+
       '<td class="tbl-inv">'+d.inv+'</td>'+
       '<td class="tbl-date">'+d.dueDate+'</td>'+
+      '<td class="amt">'+fmt(d.amount)+'</td>'+
+      '<td class="amt" style="color:var(--paid-clr)">'+fmt(d.paid)+'</td>'+
       '<td class="amt" style="color:'+amtC+'">'+fmt(d.pending)+'</td>'+
       '<td class="center">'+badge(d.status)+'</td>'+
       '<td style="white-space:nowrap">'+d.priority+'</td>'+
-      '<td class="tbl-aging center">'+aging+'</td>'+
-      '<td class="tbl-note">'+(d.note||'—')+'</td>'+
+      '<td class="tbl-date center">'+(d.pmtDate||'—')+'</td>'+
       '</tr>';
-  }).join('')||'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">No invoices found ✅</td></tr>';
+  }).join('')||'<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--muted)">No invoices found ✅</td></tr>';
   // Total row
+  var tAmount=data.reduce(function(a,d){return a+d.amount;},0);
+  var tPaid=data.reduce(function(a,d){return a+d.paid;},0);
+  var tPending=data.reduce(function(a,d){return a+d.pending;},0);
   var tr=document.getElementById('monthlyTotalRow');
-  if(tr) tr.innerHTML='<td colspan="3" style="padding:10px 14px;font-size:12px;color:var(--muted)">TOTAL ('+data.length+' invoices)</td>'+
-    '<td class="amt" style="color:var(--accent);font-size:14px">'+fmt(total)+'</td>'+
-    '<td colspan="4"></td>';
+  if(tr) tr.innerHTML=
+    '<td colspan="3" style="padding:10px 14px;font-size:12px;color:var(--muted)">TOTAL ('+data.length+' invoices)</td>'+
+    '<td class="amt" style="font-size:13px">'+fmt(tAmount)+'</td>'+
+    '<td class="amt" style="color:var(--paid-clr);font-size:13px">'+fmt(tPaid)+'</td>'+
+    '<td class="amt" style="color:var(--accent);font-size:13px">'+fmt(tPending)+'</td>'+
+    '<td colspan="3"></td>';
 }
 
 // ===== SUPPLIER INFO =====
