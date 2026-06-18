@@ -196,8 +196,15 @@ tbody td.center{text-align:center}
       <span class="table-title">⚠️ Invoices Requiring Action</span>
       <span id="monthly-count" style="font-size:11px;color:var(--muted);margin-left:8px"></span>
     </div>
-    <table><thead><tr><th>Supplier</th><th>Invoice</th><th>Due Date</th><th>Amount</th><th>Status</th><th>Priority</th><th>Aging</th><th>CF Month</th><th>Notes</th></tr></thead>
-    <tbody id="monthlyTableBody"></tbody></table>
+    <div style="padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <select class="filter-select" id="mp-supplier" onchange="applyMonthlyFilter()" style="min-width:200px">
+        <option value="">All Suppliers</option>
+      </select>
+      <input class="search-input" placeholder="🔍 Search..." oninput="applyMonthlyFilter()" id="mp-search" style="width:180px">
+    </div>
+    <table><thead><tr><th>Supplier</th><th>Invoice</th><th>Due Date</th><th>Amount</th><th>Status</th><th>Priority</th><th>Aging</th><th>Notes</th></tr></thead>
+    <tbody id="monthlyTableBody"></tbody>
+    <tfoot><tr id="monthlyTotalRow" style="background:var(--surface2);font-weight:700;border-top:2px solid var(--border)"></tr></tfoot></table>
   </div>
 </div>
 
@@ -645,14 +652,30 @@ function applyMonthlyFilter(){
   var month=document.getElementById('mp-month').value;
   var priority=document.getElementById('mp-priority').value;
   var status=document.getElementById('mp-status').value;
+  var supplier=document.getElementById('mp-supplier')?document.getElementById('mp-supplier').value:'';
+  var search=(document.getElementById('mp-search')?document.getElementById('mp-search').value:'').toLowerCase();
+
+  // Populate supplier dropdown
+  var dd=document.getElementById('mp-supplier');
+  if(dd){
+    var suppliers=[];
+    allData.forEach(function(d){if(d.status!=='Paid'&&suppliers.indexOf(d.supplier)<0) suppliers.push(d.supplier);});
+    suppliers.sort();
+    var prev=dd.value;
+    dd.innerHTML='<option value="">All Suppliers</option>'+suppliers.map(function(s){return '<option value="'+s+'">'+s+'</option>';}).join('');
+    if(prev) dd.value=prev;
+    supplier=dd.value;
+  }
+
   var data=allData.filter(function(d){
     if(d.status==='Paid') return false;
     if(month&&d.monthDebt!==month) return false;
     if(priority&&d.priority!==priority) return false;
     if(status&&d.status!==status) return false;
+    if(supplier&&d.supplier!==supplier) return false;
+    if(search&&JSON.stringify(d).toLowerCase().indexOf(search)<0) return false;
     return true;
   });
-  var now=new Date();
   var total=data.reduce(function(a,d){return a+d.pending;},0);
   var urgent=data.filter(function(d){return d.priority.indexOf('Urgent')>=0;}).reduce(function(a,d){return a+d.pending;},0);
   var planned=data.filter(function(d){return d.priority.indexOf('Planned')>=0;}).reduce(function(a,d){return a+d.pending;},0);
@@ -688,10 +711,14 @@ function applyMonthlyFilter(){
       '<td class="center">'+badge(d.status)+'</td>'+
       '<td style="white-space:nowrap">'+d.priority+'</td>'+
       '<td class="tbl-aging center">'+aging+'</td>'+
-      '<td class="tbl-month center"><span>'+(d.monthDebt||'—')+'</span></td>'+
       '<td class="tbl-note">'+(d.note||'—')+'</td>'+
       '</tr>';
-  }).join('')||'<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--muted)">No invoices found ✅</td></tr>';
+  }).join('')||'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">No invoices found ✅</td></tr>';
+  // Total row
+  var tr=document.getElementById('monthlyTotalRow');
+  if(tr) tr.innerHTML='<td colspan="3" style="padding:10px 14px;font-size:12px;color:var(--muted)">TOTAL ('+data.length+' invoices)</td>'+
+    '<td class="amt" style="color:var(--accent);font-size:14px">'+fmt(total)+'</td>'+
+    '<td colspan="4"></td>';
 }
 
 // ===== SUPPLIER INFO =====
