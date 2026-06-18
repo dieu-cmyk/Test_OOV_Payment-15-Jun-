@@ -186,8 +186,12 @@ tbody td.center{text-align:center}
     </select>
     <select class="filter-select" id="mp-status" onchange="applyMonthlyFilter()">
       <option value="">All Status</option>
-      <option>Overdue</option><option>Due Soon</option><option>Pending</option><option>Blocked</option>
+      <option>Overdue</option><option>Due Soon</option><option>Pending</option><option>Paid</option><option>Blocked</option>
     </select>
+    <select class="filter-select" id="mp-supplier" onchange="applyMonthlyFilter()" style="min-width:180px">
+      <option value="">All Suppliers</option>
+    </select>
+    <input class="search-input" placeholder="🔍 Search..." oninput="applyMonthlyFilter()" id="mp-search" style="width:150px">
     <button class="filter-refresh-btn" onclick="loadData()">&#8634; Refresh data</button>
   </div>
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px" id="monthlyKpiRow"></div>
@@ -195,12 +199,6 @@ tbody td.center{text-align:center}
     <div class="table-header">
       <span class="table-title">⚠️ Invoices Requiring Action</span>
       <span id="monthly-count" style="font-size:11px;color:var(--muted);margin-left:8px"></span>
-    </div>
-    <div style="padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <select class="filter-select" id="mp-supplier" onchange="applyMonthlyFilter()" style="min-width:200px">
-        <option value="">All Suppliers</option>
-      </select>
-      <input class="search-input" placeholder="🔍 Search..." oninput="applyMonthlyFilter()" id="mp-search" style="width:180px">
     </div>
     <table><thead><tr><th>Supplier</th><th>Invoice</th><th>Due Date</th><th>Inv Amount</th><th>Paid</th><th>Pending</th><th>Status</th><th>Priority</th><th>PMT Date</th></tr></thead>
     <tbody id="monthlyTableBody"></tbody>
@@ -655,7 +653,7 @@ function applyMonthlyFilter(){
   var dd=document.getElementById('mp-supplier');
   if(dd){
     var suppliers=[];
-    allData.forEach(function(d){if(d.status!=='Paid'&&suppliers.indexOf(d.supplier)<0) suppliers.push(d.supplier);});
+    allData.forEach(function(d){if(suppliers.indexOf(d.supplier)<0) suppliers.push(d.supplier);});
     suppliers.sort();
     var prev=dd.value;
     dd.innerHTML='<option value="">All Suppliers</option>'+suppliers.map(function(s){return '<option value="'+s+'">'+s+'</option>';}).join('');
@@ -664,7 +662,6 @@ function applyMonthlyFilter(){
   }
 
   var data=allData.filter(function(d){
-    if(d.status==='Paid') return false;
     if(month&&d.monthDebt!==month) return false;
     if(priority&&d.priority!==priority) return false;
     if(status&&d.status!==status) return false;
