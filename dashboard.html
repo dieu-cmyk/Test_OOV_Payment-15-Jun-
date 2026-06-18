@@ -103,7 +103,7 @@ tbody td.center{text-align:center}
     <div class="nav-item" onclick="showPage('supplier-info',this)"><span class="nav-icon">🏢</span> Supplier Info</div>
     <div class="nav-section">Analysis</div>
     <div class="nav-item" onclick="showPage('aging',this)"><span class="nav-icon">⏱️</span> Aging</div>
-    <div class="nav-item" onclick="showPage('detail',this)"><span class="nav-icon">📋</span> Invoice Detail</div>
+    <div class="nav-item" onclick="showPage('detail',this)"><span class="nav-icon">📋</span> Invoice List</div>
   </nav>
   <div class="sidebar-footer"><span class="update-dot"></span>Last sync: <span id="lastSync">—</span></div>
 </aside>
@@ -258,24 +258,33 @@ tbody td.center{text-align:center}
   <div class="page-header">
     <div>
       <div class="page-eyebrow">Financial Data · 2026</div>
-      <div class="page-title">Invoice Detail</div>
+      <div class="page-title">Invoice List</div>
       <div class="page-subtitle" id="detail-subtitle"></div>
     </div>
+  </div>
+  <div class="filter-bar">
+    <select class="filter-select" id="detail-pmtdate" onchange="applyDetailFilters()">
+      <option value="">All PMT Date</option>
+    </select>
+    <select class="filter-select" id="detail-supplier" onchange="applyDetailFilters()">
+      <option value="">All Suppliers</option>
+    </select>
+    <select class="filter-select" id="detail-priority" onchange="applyDetailFilters()">
+      <option value="">All Priority</option>
+      <option>🔴 Urgent</option><option>🟠 Planned</option><option>🟢 Consider</option><option>⚫ Blocked</option><option>✅ Done</option>
+    </select>
+    <select class="filter-select" id="detail-status" onchange="applyDetailFilters()">
+      <option value="">All Status</option>
+      <option>Overdue</option><option>Due Soon</option><option>Pending</option><option>Paid</option><option>Blocked</option>
+    </select>
+    <button class="filter-refresh-btn" onclick="loadData()">&#8634; Refresh</button>
   </div>
   <div class="table-card">
     <div class="table-header">
       <span class="table-title">Full Invoice List</span>
-      <div class="table-controls">
-        <input class="search-input" placeholder="🔍 Search..." oninput="filterDetailTable(this.value)" id="detailSearch">
-        <button class="filter-btn active" onclick="filterStatus('all',this)">All</button>
-        <button class="filter-btn" onclick="filterStatus('paid',this)">✅ Paid</button>
-        <button class="filter-btn" onclick="filterStatus('pending',this)">⏳ Pending</button>
-        <button class="filter-btn" onclick="filterStatus('overdue',this)">🔴 Overdue</button>
-        <button class="filter-btn" onclick="filterStatus('blocked',this)">⚫ Blocked</button>
-        <button class="filter-refresh-btn" onclick="loadData()">&#8634; Refresh</button>
-      </div>
+      <span id="detail-count" style="font-size:11px;color:var(--muted);margin-left:8px"></span>
     </div>
-    <table><thead><tr><th>#</th><th>Supplier</th><th>Invoice</th><th>Bank</th><th>Description</th><th>Inv. Date</th><th>Due Date</th><th>Total (USD)</th><th>Paid</th><th>Outstanding</th><th>Status</th><th>Priority</th><th>CF Month</th><th>Notes</th></tr></thead>
+    <table><thead><tr><th>#</th><th>Supplier</th><th>Invoice</th><th>Inv. Date</th><th>Due Date</th><th class="th-amt">Total (USD)</th><th class="th-amt">Paid</th><th class="th-amt">Outstanding</th><th>Status</th><th>Priority</th><th>PMT Date</th><th>Notes</th></tr></thead>
     <tbody id="mainTableBody"></tbody></table>
   </div>
 </div>
@@ -469,7 +478,7 @@ function renderCurrentPage(){
   else if(currentPage==='monthly') applyMonthlyFilter();
   else if(currentPage==='supplier-info') renderSupplierInfo();
   else if(currentPage==='aging') renderAging();
-  else if(currentPage==='detail') applyDetailFilters(document.getElementById('detailSearch').value.toLowerCase(),currentFilter);
+  else if(currentPage==='detail') applyDetailFilters();
 }
 
 // ===== OVERVIEW =====
@@ -896,37 +905,63 @@ function renderAging(){
 var currentFilter='all';
 function renderDetailTable(data){
   document.getElementById('detail-subtitle').textContent=data.length+' invoices';
+  document.getElementById('detail-count').textContent=data.length+' items';
   document.getElementById('mainTableBody').innerHTML=data.map(function(d,i){
     return '<tr>'+
       '<td style="color:var(--muted);font-size:11px;text-align:right">'+(i+1)+'</td>'+
       '<td class="tbl-supplier">'+d.supplier+'</td>'+
       '<td class="tbl-inv">'+d.inv+'</td>'+
-      '<td class="tbl-bank" title="'+d.bank+'">'+d.bank+'</td>'+
-      '<td class="tbl-desc" title="'+d.desc+'">'+d.desc+'</td>'+
       '<td class="tbl-date">'+d.invDate+'</td>'+
       '<td class="tbl-date">'+d.dueDate+'</td>'+
       '<td class="amt">'+fmt(d.amount)+'</td>'+
-      '<td class="amt" style="color:var(--paid-clr)">'+(d.paid>0?fmt(d.paid):'—')+'</td>'+
-      '<td class="amt" style="color:'+(d.pending>0?'var(--warn)':'var(--muted)')+'">'+fmt(d.pending)+'</td>'+
+      '<td class="amt" style="color:#8b2500;font-weight:500">'+(d.paid>0?'-'+fmt(d.paid):'$0')+'</td>'+
+      '<td class="amt" style="color:'+(d.pending>0?'#1a5fa8':'var(--muted)')+'">'+fmt(d.pending)+'</td>'+
       '<td class="center">'+badge(d.status)+'</td>'+
       '<td style="white-space:nowrap">'+d.priority+'</td>'+
-      '<td class="tbl-month center"><span>'+(d.monthDebt||'—')+'</span></td>'+
+      '<td class="tbl-date center">'+(d.pmtDate||'—')+'</td>'+
       '<td class="tbl-note">'+(d.note||'—')+'</td>'+
       '</tr>';
-  }).join('');
+  }).join('')||'<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--muted)">No invoices found ✅</td></tr>';
 }
 function filterStatus(status,btn){
   currentFilter=status;
   document.querySelectorAll('.filter-btn').forEach(function(b){b.classList.remove('active');});
   btn.classList.add('active');
-  applyDetailFilters(document.getElementById('detailSearch').value.toLowerCase(),status);
+  applyDetailFilters();
 }
-function filterDetailTable(q){applyDetailFilters(q.toLowerCase(),currentFilter);}
-function applyDetailFilters(q,status){
+function filterDetailTable(q){applyDetailFilters();}
+function applyDetailFilters(){
+  // Populate dropdowns
+  var ddSup=document.getElementById('detail-supplier');
+  var ddPmt=document.getElementById('detail-pmtdate');
+  if(ddSup){
+    var sups=[];
+    allData.forEach(function(d){if(sups.indexOf(d.supplier)<0) sups.push(d.supplier);});
+    sups.sort();
+    var prevS=ddSup.value;
+    ddSup.innerHTML='<option value="">All Suppliers</option>'+sups.map(function(s){return '<option value="'+s+'">'+s+'</option>';}).join('');
+    if(prevS) ddSup.value=prevS;
+  }
+  if(ddPmt){
+    var pmts=[];
+    allData.forEach(function(d){if(d.pmtDate&&d.pmtDate!=='—'&&pmts.indexOf(d.pmtDate)<0) pmts.push(d.pmtDate);});
+    pmts.sort();
+    var prevP=ddPmt.value;
+    ddPmt.innerHTML='<option value="">All PMT Date</option>'+pmts.map(function(p){return '<option value="'+p+'">'+p+'</option>';}).join('');
+    if(prevP) ddPmt.value=prevP;
+  }
+
+  var supplier=ddSup?ddSup.value:'';
+  var pmtDate=ddPmt?ddPmt.value:'';
+  var priority=document.getElementById('detail-priority')?document.getElementById('detail-priority').value:'';
+  var status=document.getElementById('detail-status')?document.getElementById('detail-status').value:'';
+
   var data=allData.filter(function(d){
-    var mS=status==='all'||d.status.toLowerCase().indexOf(status)>=0;
-    var mQ=!q||JSON.stringify(d).toLowerCase().indexOf(q)>=0;
-    return mS&&mQ;
+    if(supplier&&d.supplier!==supplier) return false;
+    if(pmtDate&&d.pmtDate!==pmtDate) return false;
+    if(priority&&d.priority!==priority) return false;
+    if(status&&d.status!==status) return false;
+    return true;
   });
   renderDetailTable(data);
 }
