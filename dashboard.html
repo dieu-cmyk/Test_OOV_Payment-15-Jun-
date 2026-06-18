@@ -264,7 +264,7 @@ tbody td.center{text-align:center}
   </div>
   <div class="filter-bar">
     <select class="filter-select" id="detail-pmtdate" onchange="applyDetailFilters()">
-      <option value="">All PMT Date</option>
+      <option value="">All PMT Month</option>
     </select>
     <select class="filter-select" id="detail-supplier" onchange="applyDetailFilters()">
       <option value="">All Suppliers</option>
@@ -284,7 +284,7 @@ tbody td.center{text-align:center}
       <span class="table-title">Full Invoice List</span>
       <span id="detail-count" style="font-size:11px;color:var(--muted);margin-left:8px"></span>
     </div>
-    <table><thead><tr><th>#</th><th>Supplier</th><th>Invoice</th><th>Inv. Date</th><th>Due Date</th><th class="th-amt">Total (USD)</th><th class="th-amt">Paid</th><th class="th-amt">Outstanding</th><th>Status</th><th>Priority</th><th>PMT Date</th><th>Notes</th></tr></thead>
+    <table><thead><tr><th>#</th><th>Supplier</th><th>Invoice</th><th>Inv. Date</th><th>Due Date</th><th class="th-amt">Total (USD)</th><th class="th-amt">Paid</th><th class="th-amt">Outstanding</th><th>Status</th><th>Priority</th><th>PMT Date</th><th>Notes</th></tr><tr id="detailTotalRow" style="background:linear-gradient(90deg,#f0f4fa,#e8f0fb);font-weight:700;border-bottom:2px solid #b0c4d8;border-top:1px solid #b0c4d8"></tr></thead>
     <tbody id="mainTableBody"></tbody></table>
   </div>
 </div>
@@ -922,6 +922,17 @@ function renderDetailTable(data){
       '<td class="tbl-note">'+(d.note||'—')+'</td>'+
       '</tr>';
   }).join('')||'<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--muted)">No invoices found ✅</td></tr>';
+  // Total row
+  var tAmt=data.reduce(function(a,d){return a+d.amount;},0);
+  var tPaid=data.reduce(function(a,d){return a+d.paid;},0);
+  var tPending=data.reduce(function(a,d){return a+d.pending;},0);
+  var tr=document.getElementById('detailTotalRow');
+  if(tr) tr.innerHTML=
+    '<td colspan="5" style="padding:8px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)">Total ('+data.length+' invoices)</td>'+
+    '<td class="amt" style="font-size:13px;font-weight:800;text-align:right;padding-right:14px">'+fmt(tAmt)+'</td>'+
+    '<td class="amt" style="color:#8b2500;font-size:13px;font-weight:800;text-align:right;padding-right:14px">-'+fmt(tPaid)+'</td>'+
+    '<td class="amt" style="color:#1a5fa8;font-size:13px;font-weight:800;text-align:right;padding-right:14px">'+fmt(tPending)+'</td>'+
+    '<td colspan="4"></td>';
 }
 function filterStatus(status,btn){
   currentFilter=status;
@@ -943,11 +954,27 @@ function applyDetailFilters(){
     if(prevS) ddSup.value=prevS;
   }
   if(ddPmt){
-    var pmts=[];
-    allData.forEach(function(d){if(d.pmtDate&&d.pmtDate!=='—'&&pmts.indexOf(d.pmtDate)<0) pmts.push(d.pmtDate);});
-    pmts.sort();
+    var pmtMonths=[];
+    allData.forEach(function(d){
+      if(!d.pmtDate||d.pmtDate==='—') return;
+      // Extract month label from date e.g. "26-Mar-2026" → "Mar-2026"
+      var parts=d.pmtDate.split('-');
+      var label='';
+      if(parts.length===3){
+        label=parts[1]+'-'+parts[2]; // e.g. "Mar-2026"
+      } else {
+        label=d.pmtDate;
+      }
+      if(pmtMonths.indexOf(label)<0) pmtMonths.push(label);
+    });
+    // Sort by date
+    pmtMonths.sort(function(a,b){
+      var ma=new Date(a.replace(/(\w+)-(\d+)/,'$1 $2'));
+      var mb=new Date(b.replace(/(\w+)-(\d+)/,'$1 $2'));
+      return ma-mb;
+    });
     var prevP=ddPmt.value;
-    ddPmt.innerHTML='<option value="">All PMT Date</option>'+pmts.map(function(p){return '<option value="'+p+'">'+p+'</option>';}).join('');
+    ddPmt.innerHTML='<option value="">All PMT Month</option>'+pmtMonths.map(function(p){return '<option value="'+p+'">'+p+'</option>';}).join('');
     if(prevP) ddPmt.value=prevP;
   }
 
@@ -958,7 +985,12 @@ function applyDetailFilters(){
 
   var data=allData.filter(function(d){
     if(supplier&&d.supplier!==supplier) return false;
-    if(pmtDate&&d.pmtDate!==pmtDate) return false;
+    if(pmtDate){
+      // Match by month-year label e.g. "Mar-2026"
+      var dParts=d.pmtDate?d.pmtDate.split('-'):[];
+      var dLabel=dParts.length===3?dParts[1]+'-'+dParts[2]:'';
+      if(dLabel!==pmtDate) return false;
+    }
     if(priority&&d.priority!==priority) return false;
     if(status&&d.status!==status) return false;
     return true;
