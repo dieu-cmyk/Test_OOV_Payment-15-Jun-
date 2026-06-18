@@ -150,16 +150,6 @@ tbody td.center{text-align:center}
     </div>
   </div>
 
-  <div id="overdueRiskBanner" style="margin-bottom:18px"></div>
-  <div style="margin-bottom:8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted)">Priority Action List</div>
-  <div class="table-card">
-    <div class="table-header">
-      <span class="table-title">⚠️ Invoices Requiring Action</span>
-      <span id="actionCount" style="font-size:11px;color:var(--muted);margin-left:8px"></span>
-    </div>
-    <table><thead><tr><th>Supplier</th><th>Invoice</th><th>Due Date</th><th>Amount</th><th>Status</th><th>Priority</th><th>Aging</th><th>Notes</th></tr></thead>
-    <tbody id="urgentTableBody"></tbody></table>
-  </div>
 </div>
 
 <!-- MONTHLY PAYABLES -->
@@ -588,8 +578,7 @@ function renderOverview(data){
     type:'bar',
     data:{labels:tK,datasets:[
       {label:'Total Invoiced',data:tK.map(function(k){return mT[k].total;}),backgroundColor:'#b0c4d8',borderWidth:0,borderRadius:3,order:2},
-      {label:'Paid',data:tK.map(function(k){return mT[k].paid;}),backgroundColor:'#1a5fa8',borderWidth:0,borderRadius:3,order:3},
-      {label:'Outstanding',data:tK.map(function(k){return mT[k].pending;}),type:'line',borderColor:'#1a3a5c',backgroundColor:'rgba(26,58,92,.08)',borderWidth:2.5,fill:true,tension:.35,pointRadius:5,pointBackgroundColor:'#1a3a5c',pointBorderColor:'#fff',pointBorderWidth:2,order:1}
+      {label:'Paid',data:tK.map(function(k){return mT[k].paid;}),backgroundColor:'#1a5fa8',borderWidth:0,borderRadius:3,order:1}
     ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{position:'top',align:'end',labels:{font:chartFont,usePointStyle:true,pointStyle:'circle',padding:14}}},
