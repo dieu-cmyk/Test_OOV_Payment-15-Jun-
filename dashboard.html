@@ -211,8 +211,10 @@ tbody td.center{text-align:center}
     </div>
   </div>
   <div class="filter-bar">
-    <span class="filter-bar-label">Search</span>
-    <input class="search-input" placeholder="🔍 Search supplier..." oninput="filterSupplierInfo(this.value)" style="width:250px">
+    <span class="filter-bar-label">Supplier</span>
+    <select class="filter-select" id="supplierDropdown" onchange="filterSupplierInfo(this.value)" style="min-width:220px">
+      <option value="">All Suppliers</option>
+    </select>
     <button class="filter-refresh-btn" onclick="loadData()">&#8634; Refresh data</button>
   </div>
   <div class="table-card">
@@ -696,44 +698,59 @@ function renderSupplierInfo(){
   var supMap={};
   allData.forEach(function(d){
     if(!supMap[d.supplier]) supMap[d.supplier]={bank:d.bank,bankAcc:d.bankAcc||'—',swift:d.swift||'—',total:0,paid:0,pending:0,statuses:[]};
-    supMap[d.supplier].total+=d.amount;    // Cột N
-    supMap[d.supplier].paid+=d.paid;       // Cột O (Math.abs đã xử lý trong parse)
-    supMap[d.supplier].pending+=d.pending; // Cột P
+    supMap[d.supplier].total+=d.amount;
+    supMap[d.supplier].paid+=d.paid;
+    supMap[d.supplier].pending+=d.pending;
     if(supMap[d.supplier].statuses.indexOf(d.status)<0) supMap[d.supplier].statuses.push(d.status);
   });
   var suppliers=Object.keys(supMap).sort();
-  document.getElementById('supplierInfoBody').innerHTML=suppliers.map(function(sup,i){
-    var s=supMap[sup];
-    // Status tổng hợp: dựa vào outstanding thực tế
-    var ms;
-    if(s.pending<=0){
-      ms='Paid';
-    } else {
-      // Có outstanding → lấy status nặng nhất từ các invoice chưa paid
-      var unpaidStatuses=[];
-      allData.filter(function(d){return d.supplier===sup&&d.pending>0;}).forEach(function(d){
-        if(unpaidStatuses.indexOf(d.status)<0) unpaidStatuses.push(d.status);
-      });
-      var so=['Overdue','Due Soon','Pending','Blocked'];
-      ms='Pending';
-      for(var si=0;si<so.length;si++){if(unpaidStatuses.indexOf(so[si])>=0){ms=so[si];break;}}
-    }
-    return '<tr>'+
-      '<td style="color:var(--muted);font-size:11px;text-align:right">'+(i+1)+'</td>'+
-      '<td class="tbl-supplier">'+sup+'</td>'+
-      '<td style="font-size:12px;white-space:nowrap">'+s.bank+'</td>'+
-      '<td class="tbl-inv">'+s.bankAcc+'</td>'+
-      '<td style="font-size:12px;letter-spacing:.5px;white-space:nowrap;color:var(--muted)">'+s.swift+'</td>'+
-      '<td class="amt">'+fmt(s.total)+'</td>'+
-      '<td class="amt" style="color:var(--paid-clr)">'+fmt(s.paid)+'</td>'+
-      '<td class="amt" style="color:'+(s.pending>0?'var(--warn)':'var(--muted)')+'">'+fmt(s.pending)+'</td>'+
-      '<td class="center">'+badge(ms)+'</td>'+
-      '</tr>';
-  }).join('');
+
+  // Populate dropdown
+  var dd=document.getElementById('supplierDropdown');
+  var prev=dd.value;
+  dd.innerHTML='<option value="">All Suppliers</option>'+suppliers.map(function(s){return '<option value="'+s+'">'+s+'</option>';}).join('');
+  if(prev) dd.value=prev;
+
+  function renderRows(list){
+    document.getElementById('supplierInfoBody').innerHTML=list.map(function(sup,i){
+      var s=supMap[sup];
+      var ms;
+      if(s.pending<=0){
+        ms='Paid';
+      } else {
+        var unpaidStatuses=[];
+        allData.filter(function(d){return d.supplier===sup&&d.pending>0;}).forEach(function(d){
+          if(unpaidStatuses.indexOf(d.status)<0) unpaidStatuses.push(d.status);
+        });
+        var so=['Overdue','Due Soon','Pending','Blocked'];
+        ms='Pending';
+        for(var si=0;si<so.length;si++){if(unpaidStatuses.indexOf(so[si])>=0){ms=so[si];break;}}
+      }
+      return '<tr>'+
+        '<td style="color:var(--muted);font-size:11px;text-align:right">'+(i+1)+'</td>'+
+        '<td class="tbl-supplier">'+sup+'</td>'+
+        '<td style="font-size:12px;white-space:nowrap">'+s.bank+'</td>'+
+        '<td class="tbl-inv">'+s.bankAcc+'</td>'+
+        '<td style="font-size:12px;letter-spacing:.5px;white-space:nowrap;color:var(--muted)">'+s.swift+'</td>'+
+        '<td class="amt">'+fmt(s.total)+'</td>'+
+        '<td class="amt" style="color:var(--paid-clr)">'+fmt(s.paid)+'</td>'+
+        '<td class="amt" style="color:'+(s.pending>0?'var(--warn)':'var(--muted)')+'">'+fmt(s.pending)+'</td>'+
+        '<td class="center">'+badge(ms)+'</td>'+
+        '</tr>';
+    }).join('');
+  }
+
+  var selected=dd.value;
+  renderRows(selected?suppliers.filter(function(s){return s===selected;}):suppliers);
+
+  // Store renderRows for filter use
+  window._supRenderRows=renderRows;
+  window._supList=suppliers;
 }
-function filterSupplierInfo(q){
-  q=q.toLowerCase();
-  document.querySelectorAll('#supplierInfoBody tr').forEach(function(row){row.style.display=row.textContent.toLowerCase().indexOf(q)>=0?'':'none';});
+function filterSupplierInfo(val){
+  if(window._supRenderRows&&window._supList){
+    window._supRenderRows(val?window._supList.filter(function(s){return s===val;}):window._supList);
+  }
 }
 
 // ===== AGING =====
